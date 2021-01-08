@@ -1,12 +1,25 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-import App from './App';
+import App from './screens/App';
+import First from './screens/First';
+
 import reportWebVitals from './reportWebVitals';
+import { BrowserRouter, Switch, Route } from "react-router-dom";
+
 
 ReactDOM.render(
   <React.StrictMode>
-    <App />
+    <BrowserRouter>
+      <Switch>
+        <Route exact path='/'>
+          <First />
+        </Route>
+        <Route path='/0'>
+          <App />
+        </Route>
+      </Switch>
+    </BrowserRouter>
   </React.StrictMode>,
   document.getElementById('root')
 );
