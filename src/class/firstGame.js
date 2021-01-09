@@ -26,6 +26,7 @@ class firstGame extends Scene {
         this.platformsGame();
         this.playerGame();
         this.starsGame();
+        this.enemiesGame();
     }
     update() {
         this.cursorsGame();
@@ -67,23 +68,49 @@ class firstGame extends Scene {
             repeat: -1
         });
     }
+    enemiesGame() {
+        const { bombs, physics, platforms, player } = this;
+        physics.add.collider(bombs, platforms);
+        physics.add.collider(player, bombs, (hitBomb) => {
+            physics.pause();
+            player.setTint(0xff0000);
+            player.anims.play('turn');
+            // let gameOver = true;
+        }, null, this);
+    }
     starsGame() {
-        let { physics, platforms, player, score, scoreText } = this;
+        let { bombs, physics, platforms, player, score, scoreText } = this;
         const stars = physics.add.group({
             key: 'star',
             repeat: 9,
             setXY: { x: 20, y: 0, stepX: 70, stepY: -40 }
         })
-        stars.children.iterate(child => {
-            child.setBounceY(Phaser.Math.FloatBetween(.5, .2))
-        });
+
         physics.add.collider(stars, platforms);
         physics.add.overlap(player, stars, (player, star) => {
             star.disableBody(true, true);
             score += 10
             localStorage.setItem('score', score.toString());
             scoreText.setText(`Score: ${score}`);
+
+            stars.children.iterate(child => {
+                child.setBounceY(Phaser.Math.FloatBetween(.5, .2))
+            });
+
+            if (stars.countActive(true) === 0) {
+                stars.children.iterate(function (child) {
+                    child.enableBody(true, child.x, 0, true, true);
+                });
+
+                var x = (player.x < 400) ? Phaser.Math.Between(400, 800) : Phaser.Math.Between(0, 400);
+                var bomb = bombs.create(x, 16, 'bomb');
+                bomb.setBounce(1);
+                bomb.setCollideWorldBounds(true);
+                bomb.setVelocity(Phaser.Math.Between(-200, 200), 20);
+            }
         }, null, this);
+
+
     }
     platformsGame() {
         const { physics, cam } = this;
@@ -96,6 +123,8 @@ class firstGame extends Scene {
             this.platforms.create(item[0], item[1], 'ground').setScale(x, y).refreshBody();
             platformCount++;
         }
+        /* Generate group bombs */
+        this.bombs = physics.add.group();
     }
     cursorsGame() {
         const { input, player } = this;
