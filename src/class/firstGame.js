@@ -19,7 +19,20 @@ class firstGame extends Scene {
         load.image('ground', 'platform.png');
         load.image('star', 'star.png');
         load.image('bomb', 'bomb.png');
-        load.spritesheet('dude', 'dude.png', { frameWidth: 32, frameHeight: 48 });
+        load.image('btnLeft', 'left.png');
+        load.image('btnRight', 'right.png');
+        load.image('btnDown', 'down.png');
+        load.spritesheet('dude', 'dude.png', {
+            frameWidth: 32,
+            frameHeight: 48
+        });
+        load.spritesheet('btn', 'button_sprite_sheet.png', {
+            frameWidth: 193,
+            frameHeight: 71
+        })
+        load.audio('bgSound', 'audio/bg.mp3');
+        load.audio('deathSound', 'audio/playerDeath.mp3');
+        load.audio('starSound', 'audio/star.wav');
     }
     create() {
         this.setBackgroundImage();
@@ -27,12 +40,14 @@ class firstGame extends Scene {
         this.playerGame();
         this.starsGame();
         this.enemiesGame();
+        this.configButtons();
     }
     update() {
-        this.cursorsGame();
+        // this.cursorsGame();
+        this.buttonsGame();
     }
     setBackgroundImage() {
-        const { add, cam } = this;
+        const { add, cam, sound } = this;
         const image = add.image(cam.x / 2, cam.y / 2, 'sky');
         const scaleX = cam.x / image.width;
         const scaleY = cam.y / image.height;
@@ -41,14 +56,20 @@ class firstGame extends Scene {
         /* initialize text score game */
         this.score = localStorage.getItem('score') ? parseFloat(localStorage.getItem('score')) : 0;
         this.scoreText = add.text(10, 10, `Score: ${this.score}`, {
-            fontSize: '20px', color: '#FFFFFF', fontFamily: 'Arial'
+            fontSize: '15px', color: '#FFFFFF', fontFamily: 'Arial'
         });
+        this.bgSound = sound.add('bgSound');
+        this.bgSound.play({
+            loop: true
+        });
+
     }
     playerGame() {
         const { anims, physics, platforms } = this;
         this.player = physics.add.sprite(100, 450, 'dude');
         this.player.setBounce(0.2);
         this.player.setCollideWorldBounds(true);
+        this.player.scale = .9;
         physics.add.collider(this.player, platforms);
         anims.create({
             key: 'left',
@@ -67,25 +88,26 @@ class firstGame extends Scene {
             frameRate: 10,
             repeat: -1
         });
+
     }
     enemiesGame() {
-        const { bombs, physics, platforms, player } = this;
+        const { bombs, physics, platforms, player, scene, bgSound, sound } = this;
         physics.add.collider(bombs, platforms);
-        physics.add.collider(player, bombs, (hitBomb) => {
-            physics.pause();
-            player.setTint(0xff0000);
+        physics.add.collider(player, bombs, () => {
             player.anims.play('turn');
-            // let gameOver = true;
+            scene.pause();
+            bgSound.stop();
+            sound.add('deathSound').play();
         }, null, this);
     }
     starsGame() {
-        let { bombs, physics, platforms, player, score, scoreText } = this;
+        let { bombs, physics, platforms, player, score, scoreText, sound } = this;
         const stars = physics.add.group({
             key: 'star',
-            repeat: 9,
-            setXY: { x: 20, y: 0, stepX: 70, stepY: -40 }
+            repeat: 4,
+            setXY: { x: 20, y: 0, stepX: 100, stepY: -40 },
+            setScale: { x: .8, y: .8 }
         })
-
         physics.add.collider(stars, platforms);
         physics.add.overlap(player, stars, (player, star) => {
             star.disableBody(true, true);
@@ -93,15 +115,16 @@ class firstGame extends Scene {
             localStorage.setItem('score', score.toString());
             scoreText.setText(`Score: ${score}`);
 
+            sound.add('starSound').play()
+
             stars.children.iterate(child => {
-                child.setBounceY(Phaser.Math.FloatBetween(.5, .2))
-            });
+                child.setBounceY(Phaser.Math.FloatBetween(1, .2))
+            })
 
             if (stars.countActive(true) === 0) {
-                stars.children.iterate(function (child) {
+                stars.children.iterate(child => {
                     child.enableBody(true, child.x, 0, true, true);
                 });
-
                 var x = (player.x < 400) ? Phaser.Math.Between(400, 800) : Phaser.Math.Between(0, 400);
                 var bomb = bombs.create(x, 16, 'bomb');
                 bomb.setBounce(1);
@@ -115,16 +138,89 @@ class firstGame extends Scene {
     platformsGame() {
         const { physics, cam } = this;
         this.platforms = physics.add.staticGroup();
-        const grounds = [[(cam.x / 2), (cam.y / 2) * 2], [600, 400], [50, 250], [750, 220]];
         let platformCount = 0;
-        for (const item of grounds) {
-            const x = platformCount === 0 ? 10 : .6;
-            const y = platformCount === 0 ? 2 : .5;
-            this.platforms.create(item[0], item[1], 'ground').setScale(x, y).refreshBody();
+        new Array(5).fill().forEach(() => {
+            let setX, setY, scaleX, scaleY;
+            if (platformCount === 0) {
+                /* Platorm ground */
+                setX = scaleX = cam.x;
+                setY = cam.y;
+                scaleY = 3.3
+            } else {
+                /* All platforms group scene */
+                setX = Phaser.Math.Between(0, cam.x);
+                setY = Phaser.Math.Between(30, cam.y + 40);
+                scaleX = .050;
+                scaleY = .1;
+            }
+            this.platforms.create(setX, setY, 'ground').setScale(scaleX, scaleY).refreshBody();
             platformCount++;
-        }
+        })
         /* Generate group bombs */
         this.bombs = physics.add.group();
+    }
+    configButtons() {
+        this.onPressed = false;
+        this.typeButton = "";
+        const { add, cam } = this;
+        const buttons = [
+            {
+                key: 'btnLeft',
+                position: {
+                    x: 30
+                }
+            },
+            {
+                key: 'btnRight',
+                position: {
+                    x: 90
+                }
+            },
+            {
+                key: 'btnDown',
+                position: {
+                    x: cam.x - 30
+                }
+            }
+        ];
+        const scaleButton = (btn, scaleX = .15, scaleY = .15) => {
+            btn.scaleX = scaleX
+            btn.scaleY = scaleY
+        }
+        for (const item of buttons) {
+            let btn = add.sprite(item.position.x, (cam.y - 25), item.key);
+            btn.setInteractive()
+            scaleButton(btn);
+            btn.on('pointerdown', () => {
+                this.onPressed = true;
+                this.typeButton = item.key;
+                scaleButton(btn, .18, .18);
+            });
+            btn.on('pointerout', () => {
+                this.onPressed = false
+                scaleButton(btn);
+            });
+        }
+    }
+    buttonsGame() {
+        const { onPressed, typeButton, player } = this;
+        switch (true) {
+            case onPressed && typeButton === "btnLeft":
+                player.setVelocityX(-160);
+                player.anims.play('left', true);
+                break;
+            case onPressed && typeButton === "btnRight":
+                player.setVelocityX(160);
+                player.anims.play('right', true);
+                break;
+            case (onPressed && typeButton === "btnDown") && player.body.touching.down:
+                player.setVelocityY(-530);
+                break;
+            default:
+                player.setVelocityX(0);
+                player.anims.play('turn');
+                break;
+        }
     }
     cursorsGame() {
         const { input, player } = this;
@@ -152,3 +248,6 @@ class firstGame extends Scene {
 export const scene = [
     firstGame
 ]
+
+
+
