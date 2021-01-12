@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import App from './screens/App';
 import First from './screens/First';
+import Buttons from './screens/Buttons';
 
 import reportWebVitals from './reportWebVitals';
 import { BrowserRouter, Switch, Route } from "react-router-dom";
@@ -17,6 +18,9 @@ ReactDOM.render(
         </Route>
         <Route path='/0'>
           <App />
+        </Route>
+        <Route path='/1'>
+          <Buttons />
         </Route>
       </Switch>
     </BrowserRouter>

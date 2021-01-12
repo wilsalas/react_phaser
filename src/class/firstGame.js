@@ -43,8 +43,7 @@ class firstGame extends Scene {
         this.configButtons();
     }
     update() {
-        // this.cursorsGame();
-        this.buttonsGame();
+        this.movePlayerGame();
     }
     setBackgroundImage() {
         const { add, cam, sound } = this;
@@ -59,9 +58,9 @@ class firstGame extends Scene {
             fontSize: '15px', color: '#FFFFFF', fontFamily: 'Arial'
         });
         this.bgSound = sound.add('bgSound');
-        this.bgSound.play({
-            loop: true
-        });
+        // this.bgSound.play({
+        //     loop: true
+        // });
 
     }
     playerGame() {
@@ -111,16 +110,14 @@ class firstGame extends Scene {
         physics.add.collider(stars, platforms);
         physics.add.overlap(player, stars, (player, star) => {
             star.disableBody(true, true);
-            score += 10
+            this.createParticle('star', star);
+            score += 10;
             localStorage.setItem('score', score.toString());
             scoreText.setText(`Score: ${score}`);
-
             sound.add('starSound').play()
-
             stars.children.iterate(child => {
                 child.setBounceY(Phaser.Math.FloatBetween(1, .2))
-            })
-
+            });
             if (stars.countActive(true) === 0) {
                 stars.children.iterate(child => {
                     child.enableBody(true, child.x, 0, true, true);
@@ -130,6 +127,7 @@ class firstGame extends Scene {
                 bomb.setBounce(1);
                 bomb.setCollideWorldBounds(true);
                 bomb.setVelocity(Phaser.Math.Between(-200, 200), 20);
+                this.createParticle('bomb', bomb);
             }
         }, null, this);
 
@@ -145,7 +143,7 @@ class firstGame extends Scene {
                 /* Platorm ground */
                 setX = scaleX = cam.x;
                 setY = cam.y;
-                scaleY = 3.3
+                scaleY = 4
             } else {
                 /* All platforms group scene */
                 setX = Phaser.Math.Between(0, cam.x);
@@ -161,7 +159,7 @@ class firstGame extends Scene {
     }
     configButtons() {
         this.onPressed = false;
-        this.typeButton = "";
+        this.typeButton = [false, false, false];
         const { add, cam } = this;
         const buttons = [
             {
@@ -173,7 +171,7 @@ class firstGame extends Scene {
             {
                 key: 'btnRight',
                 position: {
-                    x: 90
+                    x: 100
                 }
             },
             {
@@ -183,65 +181,59 @@ class firstGame extends Scene {
                 }
             }
         ];
-        const scaleButton = (btn, scaleX = .15, scaleY = .15) => {
+        const scaleButton = (btn, scaleX = .20, scaleY = .20) => {
             btn.scaleX = scaleX
             btn.scaleY = scaleY
         }
-        for (const item of buttons) {
-            let btn = add.sprite(item.position.x, (cam.y - 25), item.key);
-            btn.setInteractive()
+        buttons.forEach((item, i) => {
+            const btn = add.image(item.position.x, (cam.y - 30), item.key);
+            btn.setInteractive();
             scaleButton(btn);
             btn.on('pointerdown', () => {
-                this.onPressed = true;
-                this.typeButton = item.key;
-                scaleButton(btn, .18, .18);
-            });
-            btn.on('pointerout', () => {
-                this.onPressed = false
+                // this.onPressed = true;
+                this.typeButton[i] = true;
+                scaleButton(btn, .21, .21);
+            }).on('pointerout', () => {
+                this.typeButton[i] = false;
                 scaleButton(btn);
             });
-        }
+        });
     }
-    buttonsGame() {
-        const { onPressed, typeButton, player } = this;
-        switch (true) {
-            case onPressed && typeButton === "btnLeft":
-                player.setVelocityX(-160);
-                player.anims.play('left', true);
-                break;
-            case onPressed && typeButton === "btnRight":
-                player.setVelocityX(160);
-                player.anims.play('right', true);
-                break;
-            case (onPressed && typeButton === "btnDown") && player.body.touching.down:
-                player.setVelocityY(-530);
-                break;
-            default:
-                player.setVelocityX(0);
-                player.anims.play('turn');
-                break;
-        }
-    }
-    cursorsGame() {
-        const { input, player } = this;
+    movePlayerGame() {
+        const { input, player, typeButton } = this;
         const cursors = input.keyboard.createCursorKeys();
         switch (true) {
-            case cursors.left.isDown:
+            case cursors.left.isDown || typeButton[0]:
                 player.setVelocityX(-160);
                 player.anims.play('left', true);
                 break;
-            case cursors.right.isDown:
+            case cursors.right.isDown || typeButton[1]:
                 player.setVelocityX(160);
                 player.anims.play('right', true);
-                break;
-            case cursors.up.isDown && player.body.touching.down:
-                player.setVelocityY(-530);
                 break;
             default:
                 player.setVelocityX(0);
                 player.anims.play('turn');
                 break;
         }
+        if ((cursors.up.isDown || typeButton[2]) && player.body.touching.down) {
+            player.setVelocityY(-530);
+        }
+    }
+    createParticle(key, elem) {
+        const { add } = this;
+        const newParticle = add.particles(key);
+        newParticle.createEmitter({
+            x: 0,
+            y: 0,
+            speed: 200,
+            lifespan: 300,
+            blendMode: 'ADD',
+            quantity: 20,
+            maxParticles: 1000,
+            scale: { min: .4, max: .10 },
+            on: false
+        }).emitParticleAt(elem.x, elem.y);
     }
 }
 

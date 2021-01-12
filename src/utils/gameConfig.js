@@ -13,16 +13,19 @@ const gameConfig = scene => {
         },
         render: {
             antialias: false,
-            pixelArt: true,
-            roundPixels: true
+            pixelArt: false,
+            roundPixels: false
         },
         physics: {
             default: 'arcade',
             arcade: {
-                gravity: { y: 400 },
-                debug: false
+                gravity: { y: 300 },
+                debug: true
             }
         },
+        input: {
+			activePointers:3
+		},
         scene
     }
     return game;
