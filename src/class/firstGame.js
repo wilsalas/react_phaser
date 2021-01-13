@@ -2,7 +2,18 @@ import Phaser, { Scene } from "phaser";
 
 class firstGame extends Scene {
     constructor() {
-        super({ key: "firstGame" });
+        super({
+            key: "firstGame",
+            pack: {
+                files: [
+                    {
+                        type: 'image',
+                        key: 'sky2',
+                        url: 'sky2.png'
+                    }
+                ]
+            }
+        });
     }
     init() {
         const { cameras } = this;
@@ -14,7 +25,6 @@ class firstGame extends Scene {
     }
     preload() {
         const { load } = this;
-        load.baseURL = '/assets/';
         load.image('sky', 'sky.png');
         load.image('ground', 'platform.png');
         load.image('star', 'star.png');
@@ -33,6 +43,7 @@ class firstGame extends Scene {
         load.audio('bgSound', 'audio/bg.mp3');
         load.audio('deathSound', 'audio/playerDeath.mp3');
         load.audio('starSound', 'audio/star.wav');
+        this.progressBarGame();
     }
     create() {
         this.setBackgroundImage();
@@ -45,6 +56,52 @@ class firstGame extends Scene {
     update() {
         this.movePlayerGame();
     }
+
+    progressBarGame() {
+        const { add, cam, load } = this;
+        let center = {
+            x: cam.x / 2,
+            y: cam.y / 2
+        }
+        const image = add.image(center.x, center.y, 'sky2');
+        const scaleX = cam.x / image.width;
+        const scaleY = cam.y / image.height;
+        const scale = Math.max(scaleX, scaleY);
+        image.setScale(scale).setScrollFactor(0);
+        const progressBox = add.graphics();
+        const progressBar = add.graphics();
+        const loadingText = add.text(center.x, (center.y - 50), 'Loading...', {
+            fontSize: '20px', color: '#FFFFFF', fontFamily: 'Arial'
+        });
+        const percentText = add.text(center.x, (center.y - 5), '0%', {
+            fontSize: '18px', color: '#FFFFFF', fontFamily: 'Arial'
+        });
+        const assetText = add.text(center.x, (center.y + 50), '', {
+            fontSize: '18px', color: '#FFFFFF', fontFamily: 'Arial'
+        });
+        loadingText.setOrigin(.5, .5);
+        percentText.setOrigin(.5, .5);
+        assetText.setOrigin(.5, .5);
+        progressBox.fillStyle(0x222222, 0.8);
+        progressBox.fillRect(percentText.x / 2, percentText.y + 90, percentText.x, 20);
+        load.on('progress', function (value) {
+            percentText.setText(`${parseInt(value * 100)}%`);
+            progressBar.clear();
+            progressBar.fillStyle(0xffffff, 1);
+            progressBar.fillRect(percentText.x / 2, percentText.y + 90, parseFloat(value * percentText.x), 20);
+        });
+        load.on('fileprogress', function (file) {
+            assetText.setText(`Loading asset: ${file.key}`);
+        });
+        load.on('complete', function () {
+            progressBar.destroy();
+            progressBox.destroy();
+            loadingText.destroy();
+            percentText.destroy();
+            assetText.destroy();
+        });
+    }
+
     setBackgroundImage() {
         const { add, cam, sound } = this;
         const image = add.image(cam.x / 2, cam.y / 2, 'sky');
@@ -58,14 +115,14 @@ class firstGame extends Scene {
             fontSize: '15px', color: '#FFFFFF', fontFamily: 'Arial'
         });
         this.bgSound = sound.add('bgSound');
-        // this.bgSound.play({
-        //     loop: true
-        // });
+        this.bgSound.play({
+            loop: true
+        });
 
     }
     playerGame() {
-        const { anims, physics, platforms } = this;
-        this.player = physics.add.sprite(100, 450, 'dude');
+        const { anims, physics, platforms, cam } = this;
+        this.player = physics.add.sprite(100, cam.y / 2, 'dude');
         this.player.setBounce(0.2);
         this.player.setCollideWorldBounds(true);
         this.player.scale = .9;
@@ -240,6 +297,7 @@ class firstGame extends Scene {
 export const scene = [
     firstGame
 ]
+
 
 
 

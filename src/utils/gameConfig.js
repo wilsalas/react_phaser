@@ -24,8 +24,11 @@ const gameConfig = scene => {
             }
         },
         input: {
-			activePointers:3
-		},
+            activePointers: 3
+        },
+        loader: {
+            baseURL: '/assets/'
+        },
         scene
     }
     return game;
