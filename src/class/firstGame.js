@@ -32,6 +32,7 @@ class firstGame extends Scene {
         load.image('btnLeft', 'left.png');
         load.image('btnRight', 'right.png');
         load.image('btnDown', 'down.png');
+        load.image('gameover', 'gameover.png');
         load.spritesheet('dude', 'dude.png', {
             frameWidth: 32,
             frameHeight: 48
@@ -47,6 +48,7 @@ class firstGame extends Scene {
     }
     create() {
         this.setBackgroundImage();
+        this.gameOverGame()
         this.platformsGame();
         this.playerGame();
         this.starsGame();
@@ -84,16 +86,16 @@ class firstGame extends Scene {
         assetText.setOrigin(.5, .5);
         progressBox.fillStyle(0x222222, 0.8);
         progressBox.fillRect(percentText.x / 2, percentText.y + 90, percentText.x, 20);
-        load.on('progress', function (value) {
+        load.on('progress', value => {
             percentText.setText(`${parseInt(value * 100)}%`);
             progressBar.clear();
             progressBar.fillStyle(0xffffff, 1);
             progressBar.fillRect(percentText.x / 2, percentText.y + 90, parseFloat(value * percentText.x), 20);
         });
-        load.on('fileprogress', function (file) {
+        load.on('fileprogress', file => {
             assetText.setText(`Loading asset: ${file.key}`);
         });
-        load.on('complete', function () {
+        load.on('complete', () => {
             progressBar.destroy();
             progressBox.destroy();
             loadingText.destroy();
@@ -115,9 +117,10 @@ class firstGame extends Scene {
             fontSize: '15px', color: '#FFFFFF', fontFamily: 'Arial'
         });
         this.bgSound = sound.add('bgSound');
-        this.bgSound.play({
-            loop: true
-        });
+        // this.bgSound.play({
+        //     loop: true
+        // });
+
 
     }
     playerGame() {
@@ -147,13 +150,23 @@ class firstGame extends Scene {
 
     }
     enemiesGame() {
-        const { bombs, physics, platforms, player, scene, bgSound, sound } = this;
+        const { bombs, physics, platforms, player, bgSound, sound, gameOver, textGameOver, tweens } = this;
         physics.add.collider(bombs, platforms);
-        physics.add.collider(player, bombs, () => {
-            player.anims.play('turn');
-            scene.pause();
+        physics.add.collider(player, bombs, (itemPlayer, itemBomb) => {
+            itemPlayer.anims.play('turn');
+            physics.pause();
             bgSound.stop();
             sound.add('deathSound').play();
+            itemPlayer.disableBody(true);
+            itemBomb.destroy();
+            gameOver.setVisible(true);
+            textGameOver.setVisible(true);
+            gameOver.alpha = 0;
+            tweens.add({
+                targets: [gameOver],
+                duration: 900,
+                alpha: 1
+            });
         }, null, this);
     }
     starsGame() {
@@ -291,6 +304,22 @@ class firstGame extends Scene {
             scale: { min: .4, max: .10 },
             on: false
         }).emitParticleAt(elem.x, elem.y);
+    }
+    gameOverGame() {
+        const { add, cam, scene } = this;
+        this.gameOver = add.image(cam.x / 2, cam.y / 2, 'gameover');
+        this.gameOver.setDisplaySize(cam.x, cam.y);
+        this.gameOver.setVisible(false);
+        this.gameOver.setDepth(1);
+        this.textGameOver = add.text(cam.x / 2, cam.y / 2 + 80, 'PRESS START AGAIN', {
+            fontSize: 50
+        }).setOrigin(.5, .5)
+        this.textGameOver.setVisible(false);
+        this.textGameOver.setDepth(1);
+        this.gameOver.setInteractive();
+        this.gameOver.on('pointerdown', () => {
+            scene.restart();
+        });
     }
 }
 

@@ -11,16 +11,16 @@ const gameConfig = scene => {
             width: '100%',
             height: '100%',
         },
-        render: {
-            antialias: false,
-            pixelArt: false,
-            roundPixels: false
-        },
+        // render: {
+        //     antialias: false,
+        //     pixelArt: false,
+        //     roundPixels: false
+        // },
         physics: {
             default: 'arcade',
             arcade: {
                 gravity: { y: 300 },
-                debug: true
+                debug: false
             }
         },
         input: {
