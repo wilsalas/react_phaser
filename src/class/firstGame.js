@@ -115,11 +115,12 @@ class firstGame extends Scene {
         this.score = localStorage.getItem('score') ? parseFloat(localStorage.getItem('score')) : 0;
         this.scoreText = add.text(10, 10, `Score: ${this.score}`, {
             fontSize: '15px', color: '#FFFFFF', fontFamily: 'Arial'
-        });
+        }).setScrollFactor(0);
+        
         this.bgSound = sound.add('bgSound');
-        // this.bgSound.play({
-        //     loop: true
-        // });
+        this.bgSound.play({
+            loop: true
+        });
 
 
     }
@@ -130,6 +131,7 @@ class firstGame extends Scene {
         this.player.setCollideWorldBounds(true);
         this.player.scale = .9;
         physics.add.collider(this.player, platforms);
+        // cameras.main.startFollow(this.player)
         anims.create({
             key: 'left',
             frames: anims.generateFrameNumbers('dude', { start: 0, end: 3 }),
@@ -258,6 +260,7 @@ class firstGame extends Scene {
         buttons.forEach((item, i) => {
             const btn = add.image(item.position.x, (cam.y - 30), item.key);
             btn.setInteractive();
+            btn.setScrollFactor(0);
             scaleButton(btn);
             btn.on('pointerdown', () => {
                 // this.onPressed = true;
@@ -320,6 +323,8 @@ class firstGame extends Scene {
         this.gameOver.on('pointerdown', () => {
             scene.restart();
         });
+        this.textGameOver.setScrollFactor(0);
+        this.gameOver.setScrollFactor(0);
     }
 }
 
